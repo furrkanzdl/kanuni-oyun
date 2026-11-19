@@ -25,6 +25,11 @@ canvas{display:block;background:#000;box-shadow:0 0 60px #000}
   width:40px;height:40px;border-radius:50%;border:1px solid var(--altin);background:#000a;color:var(--altin);
   font:700 20px var(--font-metin);cursor:pointer;opacity:.55}
 #ayarDug:hover,#ayarDug:focus-visible{opacity:1;outline:2px solid var(--altin)}
+#tamEkran{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));
+  padding:10px 16px;border-radius:22px;border:2px solid var(--altin);background:#000c;color:var(--fildisi);
+  font:800 18px var(--font-metin);cursor:pointer}
+#tamEkran:focus-visible{outline:2px solid var(--altin)}
+body.tam #tamEkran,body.tam #ayarDug,body.tam #ayar{display:none!important}
 #ayar{position:fixed;right:calc(10px + env(safe-area-inset-right,0px));bottom:calc(60px + env(safe-area-inset-bottom,0px));
   width:min(340px, calc(100vw - 20px));max-height:calc(100% - 80px);overflow:auto;background:#1b1310f2;border:1px solid var(--altin);
   border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:14px}
@@ -39,6 +44,7 @@ canvas{display:block;background:#000;box-shadow:0 0 60px #000}
 </style>
 
 <div id="sahne"><canvas id="c" width="1080" height="1920" aria-label="Kanuni Sultan Süleyman'ı uğurlama alayı oyunu"></canvas></div>
+<button id="tamEkran" type="button">⛶ Tam ekran</button>
 <button id="ayarDug" aria-label="Ayarlar" title="Ayarlar (S)">⚙</button>
 <form id="ayar" hidden>
   <h2>Yayın ayarları</h2>
@@ -55,7 +61,7 @@ canvas{display:block;background:#000;box-shadow:0 0 60px #000}
     <button type="button" id="bSoru">Soru sor (Q)</button>
     <button type="button" id="bSifirla">Turu sıfırla (R)</button>
   </div>
-  <small>Kısayollar: D demo · Q soru · R sıfırla · S bu panel</small>
+  <small>Kısayollar: D demo · Q soru · R sıfırla · S bu panel · F tam ekran<br>Tam ekrandan çıkmak için telefonda geri hareketini yap. Oyuna iki kez dokunmak da tam ekranı açıp kapatır.</small>
 </form>
 
 <script>
@@ -776,7 +782,30 @@ addEventListener("keydown", e => {
   else if (k === "q" && !aktifSoru) soruBaslat();
   else if (k === "r") sifirla();
   else if (k === "s") $("ayarDug").click();
+  else if (k === "f") tamEkranDegis();
 });
+
+/* ================= TAM EKRAN ================= */
+let ekranKilidi = null;
+async function ekranAcikTut() { try { ekranKilidi = await navigator.wakeLock.request("screen"); } catch (e) {} }
+function tamEkranda() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+function tamEkranDegis() {
+  const el = document.documentElement;
+  if (tamEkranda()) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+  const ac = el.requestFullscreen || el.webkitRequestFullscreen;
+  if (ac) {
+    Promise.resolve(ac.call(el, {navigationUI: "hide"}))
+      .then(() => { try { screen.orientation.lock("portrait").catch(() => {}); } catch (e) {} })
+      .catch(() => {});
+  }
+  ekranAcikTut();
+}
+function tamEkranGuncelle() { document.body.classList.toggle("tam", tamEkranda()); sigdir(); }
+document.addEventListener("fullscreenchange", tamEkranGuncelle);
+document.addEventListener("webkitfullscreenchange", tamEkranGuncelle);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ekranKilidi) ekranAcikTut(); });
+$("tamEkran").onclick = tamEkranDegis;
+cv.addEventListener("dblclick", tamEkranDegis);
 
 /* ================= BAŞLAT ================= */
 function basla() {
