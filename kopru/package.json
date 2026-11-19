@@ -1,0 +1,12 @@
+{
+  "name": "kanuni-alay-kopru",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TikTok canlı yayın olaylarını Kanuni alay oyununa ileten köprü",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "tiktok-live-connector": "2.4.4",
+    "ws": "8.18.0"
+  }
+}
