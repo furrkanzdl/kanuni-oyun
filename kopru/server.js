@@ -60,6 +60,7 @@ baglanti.on(WebcastEvent.GIFT, d => {
 });
 baglanti.on(WebcastEvent.SHARE, d => yay("share", kisi(d)));
 baglanti.on(WebcastEvent.FOLLOW, d => yay("follow", kisi(d)));
+baglanti.on("error", e => console.log("TikTok hatası:", (e && (e.info || e.message)) || e));
 baglanti.on(WebcastEvent.STREAM_END, () => console.log("Yayın bitti."));
 baglanti.on("disconnected", () => {
   console.log("Bağlantı koptu, 10 sn sonra yeniden denenecek…");
@@ -75,7 +76,9 @@ function baglan() {
     });
 }
 
-sunucu.listen(PORT, () => {
+process.on("uncaughtException", e => console.log("Beklenmeyen hata:", e.message || e));
+
+sunucu.listen(PORT, "0.0.0.0", () => {
   console.log(`Oyun: http://localhost:${PORT}`);
   baglan();
 });
