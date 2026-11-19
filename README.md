@@ -7,11 +7,11 @@ TikTok canlı yayını için etkileşimli alay oyunu. İzleyiciler sohbete yazar
 | İzleyici ne yapar | Oyunda ne olur |
 |---|---|
 | Sohbete **PADİŞAHIM** yazar | Alaya katılır, kalabalıkta bir karakteri olur |
-| Beğeni gönderir | Puanı artar, saflar her 20 sn'de yeniden dizilir, önde olan tabuta yaklaşır |
+| Beğeni gönderir | Puanı artar, saflar her 20 sn'de yeniden dizilir, önde olan padişahın tahtına yaklaşır |
 | **YENİÇERİ / SİPAHİ / KADIN / ERKEK** yazar | Karakterinin kıyafeti değişir |
 | Başka bir şey yazar | Yazdığı, karakterinin üstünde balon olarak görünür |
-| Gül (1 jeton) | Tabuta gül yaprakları yağar |
-| 10+ jetonluk hediye | 1 dk boyunca tabuta omuz verir |
+| Gül (1 jeton) | Padişahın tahtına gül yaprakları yağar |
+| 10+ jetonluk hediye | 1 dk boyunca padişahın tahtına omuz verir |
 | 30+ jetonluk hediye | Sancağı taşır, alayın önünde yürür |
 | 100+ jetonluk hediye | 90 sn boyunca Sokullu Paşa olur, alayı yönetir |
 | Paylaşır | +10 puan, ekranda duyurulur |

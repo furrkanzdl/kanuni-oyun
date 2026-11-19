@@ -258,7 +258,7 @@ function olayHediye(id, ad, hediyeAdi, jeton, adet) {
     Ses.sancak();
   } else if (jeton >= 10) {
     p.omuzBitis = now + 60000;
-    afisGoster(`${isim} tabuta omuz verdi`, "Bir dakika boyunca tabutu taşıyor", "#8ecae6");
+    afisGoster(`${isim} tahta omuz verdi`, "Bir dakika boyunca padişahın tahtını taşıyor", "#8ecae6");
     Ses.omuz();
   } else {
     gulSayac += adet; Ses.gul();
@@ -405,36 +405,84 @@ function sancakCiz(x, y, s, t) {
   g.fillStyle = "#1e5c3a"; g.beginPath(); g.arc(mx + Hh * 0.09, my, Hh * 0.23, 0, 6.283); g.fill();
 }
 
-function tabutCiz(t) {
+function tahtCiz(t) {
+  // Tahtırevan: omuzlarda taşınan altın yaldızlı taht, üzerinde uzanan padişah.
+  // Baş tarafı (yaslanma panosu) arkada, ayaklar kameraya doğru.
   const sal = Math.sin(t * 2.6) * 0.03;
-  const x0 = -0.5, x1 = 0.5, z0 = TABUT_Z - 0.95, z1 = TABUT_Z + 0.95, h0 = 1.32 + sal, h1 = 1.8 + sal;
+  const x0 = -0.62, x1 = 0.62, z0 = TABUT_Z - 1.0, z1 = TABUT_Z + 1.0, hb = 1.2 + sal, ht = 1.45 + sal;
   const P = (x, z, h) => proj(x, z, h);
   const poly = (pts, fill) => { g.fillStyle = fill; g.beginPath(); pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.fill(); };
-  // ön yüz (kameraya bakan)
-  poly([P(x0, z0, h0), P(x1, z0, h0), P(x1, z0, h1), P(x0, z0, h1)], "#2a1a0e");
-  // yanlar
-  poly([P(x0, z0, h0), P(x0, z1, h0), P(x0, z1, h1), P(x0, z0, h1)], "#3a2412");
-  poly([P(x1, z0, h0), P(x1, z1, h0), P(x1, z1, h1), P(x1, z0, h1)], "#3a2412");
-  // yeşil örtü (üst + sarkan kenarlar)
-  const o = 0.08;
-  poly([P(x0 - o, z0 - o, h1 + 0.02), P(x1 + o, z0 - o, h1 + 0.02), P(x1 + o, z1 + o, h1 + 0.02), P(x0 - o, z1 + o, h1 + 0.02)], "#1f5a3d");
-  poly([P(x0 - o, z0 - o, h1 + 0.02), P(x1 + o, z0 - o, h1 + 0.02), P(x1 + o, z0 - o, h1 - 0.3), P(x0 - o, z0 - o, h1 - 0.3)], "#174a32");
-  // altın işleme
-  g.strokeStyle = "#d9a945"; g.lineWidth = 3;
-  const a = P(x0 - o, z0 - o, h1 - 0.26), b = P(x1 + o, z0 - o, h1 - 0.26);
-  g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
-  const c1 = P(x0 + 0.08, z0 + 0.1, h1 + 0.03), c2 = P(x1 - 0.08, z0 + 0.1, h1 + 0.03), c3 = P(x1 - 0.08, z1 - 0.1, h1 + 0.03), c4 = P(x0 + 0.08, z1 - 0.1, h1 + 0.03);
-  g.beginPath(); g.moveTo(c1[0], c1[1]); g.lineTo(c2[0], c2[1]); g.lineTo(c3[0], c3[1]); g.lineTo(c4[0], c4[1]); g.closePath(); g.stroke();
-  // kavuk (baş tarafta, kameraya yakın uçta)
-  const k = P(0, z0 + 0.35, h1 + 0.05), ks = k[2];
-  g.fillStyle = "#fbf7ee"; g.beginPath(); g.ellipse(k[0], k[1] - ks * 0.22, ks * 0.27, ks * 0.3, 0, 0, 6.283); g.fill();
+  const cizgi = (a, b, renk, w) => { g.strokeStyle = renk; g.lineWidth = w; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); };
+  const top = (q, r, renk) => { g.fillStyle = renk; g.beginPath(); g.arc(q[0], q[1], r, 0, 6.283); g.fill(); };
+  const s0 = P(0, TABUT_Z, ht)[2];
+
+  // taşıma sırıkları
+  for (const sx of [-0.62, 0.62]) cizgi(P(sx, z0 - 0.4, 1.3 + sal), P(sx, z1 + 0.4, 1.3 + sal), "#5b3a1d", 6);
+
+  // yaslanma panosu (arkada, sivri kemerli)
+  const pano = [[x0, ht], [x0, ht + 0.85], [-0.32, ht + 1.0], [0, ht + 1.25], [0.32, ht + 1.0], [x1, ht + 0.85], [x1, ht]].map(([x, h]) => P(x, z1, h));
+  poly(pano, "#c8962e");
+  const ic = [[-0.48, ht + 0.08], [-0.48, ht + 0.78], [-0.24, ht + 0.9], [0, ht + 1.08], [0.24, ht + 0.9], [0.48, ht + 0.78], [0.48, ht + 0.08]].map(([x, h]) => P(x, z1, h));
+  poly(ic, "#1f5a3d");
+  // panodaki hilal ve yıldız
+  const m = P(0, z1, ht + 0.62), mr = s0 * 0.16;
+  top(m, mr, "#e9c46a"); top([m[0] + mr * 0.32, m[1]], mr * 0.82, "#1f5a3d");
+  top([m[0] + mr * 0.75, m[1]], mr * 0.18, "#e9c46a");
+  // arka direkler ve tepelikler
+  for (const x of [x0, x1]) { cizgi(P(x, z1, ht), P(x, z1, ht + 1.0), "#a87822", 7); top(P(x, z1, ht + 1.05), s0 * 0.07, "#f2c94c"); }
+
+  // gövde: ön yüz ve üst
+  poly([P(x0, z0, hb), P(x1, z0, hb), P(x1, z0, ht), P(x0, z0, ht)], "#8a5a1c");
+  cizgi(P(x0, z0, ht - 0.05), P(x1, z0, ht - 0.05), "#f2c94c", 3);
+  cizgi(P(x0, z0, hb + 0.05), P(x1, z0, hb + 0.05), "#f2c94c", 2);
+  top(P(0, z0, (hb + ht) / 2), s0 * 0.07, "#f2c94c");
+  poly([P(x0, z0, ht), P(x1, z0, ht), P(x1, z1, ht), P(x0, z1, ht)], "#6b1020");
+  // kadife döşek
+  const d = [P(-0.55, z0 + 0.06, ht + 0.07), P(0.55, z0 + 0.06, ht + 0.07), P(0.55, z1 - 0.04, ht + 0.07), P(-0.55, z1 - 0.04, ht + 0.07)];
+  poly(d, "#a4243b");
+  g.strokeStyle = "#e9c46a"; g.lineWidth = 2; g.beginPath(); d.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); g.stroke();
+
+  // yastık
+  const y = P(0, z1 - 0.28, ht + 0.16);
+  g.fillStyle = "#f1e6cf"; g.beginPath(); g.ellipse(y[0], y[1], y[2] * 0.36, y[2] * 0.14, 0, 0, 6.283); g.fill();
+
+  // padişahın bedeni (kaftan)
+  const hk = ht + 0.17, ust = [], alt = [];
+  for (let i = 0; i <= 8; i++) {
+    const k = i / 8, z = z0 + 0.22 + k * (z1 - 0.62 - (z0 + 0.22)), w = 0.17 + 0.16 * Math.sin(k * Math.PI * 0.62);
+    ust.push(P(-w, z, hk + 0.05 * Math.sin(k * Math.PI))); alt.push(P(w, z, hk + 0.05 * Math.sin(k * Math.PI)));
+  }
+  poly([...ust, ...alt.reverse()], "#1f5a3d");
+  // kaftanın altın şeridi ve düğmeleri
+  cizgi(P(0, z0 + 0.25, hk + 0.03), P(0, z1 - 0.65, hk + 0.08), "#e9c46a", 3);
+  for (let i = 1; i <= 4; i++) { const z = z1 - 0.7 - i * 0.12; cizgi(P(-0.09, z, hk + 0.07), P(0.09, z, hk + 0.07), "#e9c46a", 2); }
+  // sarı mestler
+  for (const x of [-0.08, 0.08]) { const q = P(x, z0 + 0.16, hk); g.fillStyle = "#e2b33a"; g.beginPath(); g.ellipse(q[0], q[1], q[2] * 0.06, q[2] * 0.09, 0, 0, 6.283); g.fill(); }
+  // göğüste kavuşturulmuş eller
+  for (const x of [-0.06, 0.06]) top(P(x, z1 - 0.95, hk + 0.1), s0 * 0.045, "#e8bf95");
+
+  // baş, sakal, kavuk
+  const b = P(0, z1 - 0.42, hk + 0.08), bs = b[2];
+  g.fillStyle = "#e6e1d6"; g.beginPath(); g.ellipse(b[0], b[1] + bs * 0.09, bs * 0.08, bs * 0.1, 0, 0, 6.283); g.fill(); // sakal
+  top(b, bs * 0.095, "#e8bf95");
+  g.strokeStyle = "#5a3d22"; g.lineWidth = 1.5;
+  for (const sx of [-1, 1]) { g.beginPath(); g.arc(b[0] + sx * bs * 0.035, b[1] - bs * 0.01, bs * 0.02, 0.2, Math.PI - 0.2); g.stroke(); } // kapalı gözler
+  const k = P(0, z1 - 0.2, hk + 0.15), ks = k[2];
+  g.fillStyle = "#fbf7ee"; g.beginPath(); g.ellipse(k[0], k[1], ks * 0.21, ks * 0.17, 0, 0, 6.283); g.fill();
   g.strokeStyle = "#d8cdb5"; g.lineWidth = 2;
-  for (let i = -2; i <= 2; i++) { g.beginPath(); g.ellipse(k[0], k[1] - ks * 0.22, ks * 0.27, ks * 0.3 - Math.abs(i) * 2, 0, Math.PI * 0.15 + i * 0.1, Math.PI * 0.85 + i * 0.1); g.stroke(); }
-  g.fillStyle = "#c0392b"; g.beginPath(); g.ellipse(k[0], k[1] - ks * 0.5, ks * 0.09, ks * 0.07, 0, 0, 6.283); g.fill();
-  g.fillStyle = "#e9c46a"; g.beginPath(); g.arc(k[0], k[1] - ks * 0.24, ks * 0.035, 0, 6.283); g.fill();
-  // tabut taşıma sırıkları
-  g.strokeStyle = "#5b3a1d"; g.lineWidth = 6;
-  for (const sx of [-0.62, 0.62]) { const u = P(sx, z0 - 0.4, 1.3 + sal), v = P(sx, z1 + 0.4, 1.3 + sal); g.beginPath(); g.moveTo(u[0], u[1]); g.lineTo(v[0], v[1]); g.stroke(); }
+  for (let i = -2; i <= 2; i++) { g.beginPath(); g.ellipse(k[0], k[1], ks * 0.21, ks * 0.17 - Math.abs(i) * 2, 0, Math.PI * 0.15 + i * 0.1, Math.PI * 0.85 + i * 0.1); g.stroke(); }
+  top([k[0], k[1] - ks * 0.12], ks * 0.06, "#c0392b");
+  // sorguç (mücevherli tüy)
+  top([k[0], k[1] + ks * 0.02], ks * 0.03, "#e9c46a");
+  g.strokeStyle = "#f4ead2"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(k[0], k[1] + ks * 0.01); g.quadraticCurveTo(k[0] + ks * 0.12, k[1] - ks * 0.12, k[0] + ks * 0.05, k[1] - ks * 0.24); g.stroke();
+
+  // yan korkuluklar ve ön direkler
+  for (const x of [x0, x1]) {
+    cizgi(P(x, z0, ht + 0.3), P(x, z1, ht + 0.3), "#c8962e", 4);
+    for (const z of [z0 + 0.5, z0 + 1.0, z0 + 1.5]) cizgi(P(x, z, ht), P(x, z, ht + 0.3), "#a87822", 3);
+  }
+  for (const x of [x0, x1]) { cizgi(P(x, z0, ht), P(x, z0, ht + 0.42), "#a87822", 6); top(P(x, z0, ht + 0.46), s0 * 0.06, "#f2c94c"); }
 }
 
 /* Zemin ve gök */
@@ -522,7 +570,7 @@ function arayuzCiz(t, now) {
   // Sol panel: hediye rehberi
   panel(26, 360, 300, 268, "rgba(58,15,20,.9)");
   yazi("Hediye rehberi", 176, 400, `700 29px ${FB}`, "#e9c46a", "center");
-  const rehber = [["🌹", "Gül", "yaprak serper"], ["10+", "Omuz ver", "tabutu taşır"], ["30+", "Sancak", "alayın önünde"], ["100+", "Sokullu Paşa", "alayı yönetir"]];
+  const rehber = [["🌹", "Gül", "yaprak serper"], ["10+", "Omuz ver", "tahtı taşır"], ["30+", "Sancak", "alayın önünde"], ["100+", "Sokullu Paşa", "alayı yönetir"]];
   rehber.forEach(([j, a, b], i) => {
     const y = 448 + i * 46;
     yazi(j, 50, y, `800 24px ${FM}`, "#e9c46a");
@@ -661,11 +709,11 @@ function kare(now) {
   }
   // derinliğe göre çiz (uzaktan yakına)
   const ciz = [...oyuncular.values()].filter(p => p.z < 75).map(p => ({z: p.z, p}));
-  ciz.push({z: TABUT_Z, tabut: true});
+  ciz.push({z: TABUT_Z, taht: true});
   ciz.sort((a, b) => b.z - a.z);
   const etiketler = [];
   for (const o of ciz) {
-    if (o.tabut) { tabutCiz(t); continue; }
+    if (o.taht) { tahtCiz(t); continue; }
     const p = o.p, [sx, sy, s] = proj(p.x, p.z);
     const alfa = Math.max(0, Math.min(1, (75 - p.z) / 12));
     if (p.gorev === "sokullu") sokulluCiz(sx, sy, s, p, t);
@@ -706,7 +754,7 @@ function kare(now) {
 
 function turBitti() {
   const ilk = [...oyuncular.values()].sort((a, b) => b.puan - a.puan)[0];
-  if (ilk && ilk.puan > 0) afisGoster(`Turun alay başı: ${kis(ilk.ad, 16)}`, `${ilk.puan} puanla tabutun hemen ardında yürüdü`, "#e9c46a");
+  if (ilk && ilk.puan > 0) afisGoster(`Turun alay başı: ${kis(ilk.ad, 16)}`, `${ilk.puan} puanla tahtın hemen ardında yürüdü`, "#e9c46a");
   Ses.turSonu();
   for (const p of oyuncular.values()) { p.puan = 0; p.begeni = 0; }
   turKalan = TUR_SURESI; safKalan = SAF_YENILEME;
