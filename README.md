@@ -53,9 +53,14 @@ Köprü yayına bağlanınca oyunun sol üstündeki ışık yeşil yanar ve yan�
 
 TikFinity kullanıyorsan köprüye gerek yok: `index.html`'i aç, ⚙ ayarlarına `ws://localhost:21213` yaz.
 
+## Ses
+
+Davul, zil, çan ve ney benzeri sesler tarayıcıda üretilir. Arkada ağır bir yürüyüş davulu çalar. Hediyelerin, soruların ve tur sonunun kendi sesleri vardır.
+Tarayıcı sesi ancak ekrana dokununca başlatır: oyunu açınca bir kez dokun. Ses açma/kapama, fon davulu ve ses düzeyi ⚙ ayarlarındadır.
+
 ## Kısayollar
 
-`D` demo aç/kapat · `Q` hemen soru sor · `R` turu sıfırla · `S` ayarlar
+`D` demo aç/kapat · `Q` hemen soru sor · `R` turu sıfırla · `S` ayarlar · `F` tam ekran · `M` ses
 
 Ayarlar panelinden başlığı ve katılma kelimesini değiştirebilirsin. Soruları değiştirmek için `index.html` içindeki `SORULAR` listesini düzenle.
 

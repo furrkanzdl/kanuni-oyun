@@ -35,6 +35,7 @@ body.tam #tamEkran,body.tam #ayarDug,body.tam #ayar{display:none!important}
   border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;font-size:14px}
 #ayar h2{margin:0;font:700 18px var(--font-baslik);color:var(--altin);letter-spacing:.03em}
 #ayar label{display:flex;flex-direction:column;gap:4px;font-weight:700}
+#ayar input[type=range]{padding:0;accent-color:var(--altin)}
 #ayar input{font:500 14px var(--font-metin);padding:7px 8px;border-radius:6px;border:1px solid #6b5333;background:#0d0907;color:var(--fildisi)}
 #ayar .sira{display:flex;gap:8px;flex-wrap:wrap}
 #ayar button{font:700 14px var(--font-metin);padding:8px 10px;border-radius:6px;border:1px solid var(--altin);background:var(--kadife);color:var(--fildisi);cursor:pointer}
@@ -58,10 +59,15 @@ body.tam #tamEkran,body.tam #ayarDug,body.tam #ayar{display:none!important}
     <button type="button" id="bDemo">Demo: açık</button>
   </div>
   <div class="sira">
+    <button type="button" id="bSes">Ses: açık</button>
+    <button type="button" id="bFon">Fon davulu: açık</button>
+  </div>
+  <label for="aDuzey">Ses düzeyi<input id="aDuzey" type="range" min="0" max="1" step="0.05"></label>
+  <div class="sira">
     <button type="button" id="bSoru">Soru sor (Q)</button>
     <button type="button" id="bSifirla">Turu sıfırla (R)</button>
   </div>
-  <small>Kısayollar: D demo · Q soru · R sıfırla · S bu panel · F tam ekran<br>Tam ekrandan çıkmak için telefonda geri hareketini yap. Oyuna iki kez dokunmak da tam ekranı açıp kapatır.</small>
+  <small>Kısayollar: D demo · Q soru · R sıfırla · S bu panel · F tam ekran · M ses<br>Tam ekrandan çıkmak için telefonda geri hareketini yap. Oyuna iki kez dokunmak da tam ekranı açıp kapatır.</small>
 </form>
 
 <script>
@@ -157,6 +163,7 @@ function katil(id, ad, sebep) {
   oyuncular.set(id, p);
   katilmaSayisi++;
   bildir(`${kis(p.ad, 18)} alaya katıldı`, "katil");
+  Ses.katil();
   diz(false);
   return p;
 }
@@ -224,13 +231,13 @@ function olaySohbet(id, ad, mesaj) {
   if (n === normal(ayar.kelime)) { balon(p, mesaj); return; }
   balon(p, mesaj);
 }
-function balon(p, metin) { p.balon = {metin: kis(String(metin), 34), t: performance.now()}; }
+function balon(p, metin) { p.balon = {metin: kis(String(metin), 34), t: performance.now()}; Ses.balon(); }
 
 function olayBegeni(id, ad, adet) {
   adet = Math.max(1, adet | 0);
   const p = oyuncuAl(id, ad);
   if (!p) { bekleyenBegeni.set(id, (bekleyenBegeni.get(id) || 0) + adet); return; }
-  p.begeni += adet; puanEkle(p, adet);
+  p.begeni += adet; puanEkle(p, adet); Ses.begeni();
 }
 
 function olayHediye(id, ad, hediyeAdi, jeton, adet) {
@@ -243,15 +250,18 @@ function olayHediye(id, ad, hediyeAdi, jeton, adet) {
     p.sokulluBitis = now + 90000;
     afisGoster(`${isim} artık Sokullu Paşa!`, "Padişahın ölümünü ordudan gizleyip alayı yönetiyor", "#e9c46a");
     for (let i = 0; i < 160; i++) parcacikEkle("altin");
+    Ses.sokullu();
   } else if (jeton >= 30) {
     p.sancakBitis = now + 75000;
     afisGoster(`${isim} sancağı taşıyor`, "Alayın en önünde yürüyor", "#e76f51");
     for (let i = 0; i < 70; i++) parcacikEkle("altin");
+    Ses.sancak();
   } else if (jeton >= 10) {
     p.omuzBitis = now + 60000;
     afisGoster(`${isim} tabuta omuz verdi`, "Bir dakika boyunca tabutu taşıyor", "#8ecae6");
+    Ses.omuz();
   } else {
-    gulSayac += adet;
+    gulSayac += adet; Ses.gul();
     for (let i = 0; i < Math.min(40, 6 * adet); i++) parcacikEkle("gul");
     bildir(`${isim} ${adet > 1 ? adet + " " : ""}${hediyeAdi || "gül"} serpti`, "hediye");
   }
@@ -262,6 +272,7 @@ function olayHediye(id, ad, hediyeAdi, jeton, adet) {
 function olayPaylas(id, ad) {
   const p = oyuncuAl(id, ad);
   bildir(`${kis(ad || id, 18)} ölüm haberini sancak beylerine ulaştırdı`, "paylas");
+  Ses.paylas();
   if (p) puanEkle(p, 10);
 }
 function olayTakip(id, ad) { bildir(`${kis(ad || id, 18)} yayını takip etti`, "takip"); }
@@ -272,6 +283,7 @@ function soruBaslat() {
   sonSoru = i;
   aktifSoru = {...SORULAR[i], kalan: SORU_SURESI, cevaplar: new Map(), t: performance.now()};
   soruSonucu = null;
+  Ses.soru();
 }
 function soruBitir() {
   const q = aktifSoru; aktifSoru = null;
@@ -279,6 +291,7 @@ function soruBitir() {
   dogrular.forEach((c, i) => puanEkle(c.p, SORU_ODULU + (i === 0 ? SORU_ODULU : 0)));
   soruSonucu = {q, dogrular, toplam: q.cevaplar.size, t: performance.now()};
   soruKalan = SORU_ARALIGI;
+  if (dogrular.length) Ses.dogru(); else Ses.yanlis();
 }
 
 /* ================= PARÇACIK ================= */
@@ -574,6 +587,7 @@ function arayuzCiz(t, now) {
   g.fillStyle = wsDurum === "bagli" ? "#52b788" : demoAcik ? "#e9c46a" : "#9d0208";
   g.beginPath(); g.arc(30, 40, 8, 0, 6.283); g.fill();
   yazi(wsDurum === "bagli" ? "Canlı" : demoAcik ? "Demo" : "Bağlantı yok", 46, 48, `700 22px ${FM}`, "#f4ead2");
+  if (Ses.acikMi() && !Ses.calisiyor()) yazi("🔇 Ses için ekrana dokun", W / 2, 48, `800 24px ${FM}`, "#ffd166", "center");
 }
 
 function soruCiz(q, now) {
@@ -627,11 +641,16 @@ function kare(now) {
   turKalan -= dt; safKalan -= dt;
   if (safKalan <= 0) { safKalan = SAF_YENILEME; diz(true); }
   if (turKalan <= 0) turBitti();
-  if (aktifSoru) { aktifSoru.kalan -= dt; if (aktifSoru.kalan <= 0) soruBitir(); }
+  if (aktifSoru) {
+    const once = Math.ceil(aktifSoru.kalan); aktifSoru.kalan -= dt;
+    if (Math.ceil(aktifSoru.kalan) < once && once <= 5 && aktifSoru.kalan > 0) Ses.tik();
+    if (aktifSoru.kalan <= 0) soruBitir();
+  }
   else { soruKalan -= dt; if (soruKalan <= 0 && oyuncular.size) soruBaslat(); }
   // süresi biten görevler
   for (const p of oyuncular.values()) if (p.gorev && ((p.gorev === "omuz" && p.omuzBitis < now) || (p.gorev === "sancak" && p.sancakBitis < now) || (p.gorev === "sokullu" && p.sokulluBitis < now))) { diz(false); break; }
   if (demoAcik) demoAdim(dt);
+  Ses.fonAdim();
 
   zeminCiz(t, dt);
 
@@ -688,6 +707,7 @@ function kare(now) {
 function turBitti() {
   const ilk = [...oyuncular.values()].sort((a, b) => b.puan - a.puan)[0];
   if (ilk && ilk.puan > 0) afisGoster(`Turun alay başı: ${kis(ilk.ad, 16)}`, `${ilk.puan} puanla tabutun hemen ardında yürüdü`, "#e9c46a");
+  Ses.turSonu();
   for (const p of oyuncular.values()) { p.puan = 0; p.begeni = 0; }
   turKalan = TUR_SURESI; safKalan = SAF_YENILEME;
 }
@@ -723,6 +743,117 @@ function demoAdim(dt) {
   if (olasi(0.15)) { const id = sec(uyeler); olayPaylas(id, oyuncular.get(id).ad); }
   if (aktifSoru && olasi(5)) { const dogru = Math.random() < 0.6; olaySohbet(sec(uyeler), null, "ABCD"[dogru ? aktifSoru.d : Math.floor(rnd(0, 4))]); }
 }
+
+/* ================= SES ================= */
+// Bütün sesler Web Audio ile üretilir: davul, zil, çan, ney benzeri üfleme. Ezgiler Hicaz makamında.
+const Ses = (() => {
+  let ctx = null, ana = null, gurultu = null, demGain = null;
+  let acik = true, fonAcik = true, duzey = 0.8;
+  const son = {};
+  try { const k = JSON.parse(localStorage.getItem("kanuni-ses") || "{}"); if (k.acik === false) acik = false; if (k.fon === false) fonAcik = false; if (typeof k.duzey === "number") duzey = k.duzey; } catch (e) {}
+  const kaydet = () => { try { localStorage.setItem("kanuni-ses", JSON.stringify({acik, fon: fonAcik, duzey})); } catch (e) {} };
+  const N = {D3: 146.83, D4: 293.66, Eb4: 311.13, Fs4: 369.99, G4: 392, A4: 440, Bb4: 466.16, C5: 523.25, D5: 587.33, Fs5: 739.99, A5: 880};
+
+  function baslat() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      try { ctx = new AC(); } catch (e) { return; }
+      const komp = ctx.createDynamicsCompressor(); komp.connect(ctx.destination);
+      ana = ctx.createGain(); ana.gain.value = acik ? duzey : 0; ana.connect(komp);
+      gurultu = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = gurultu.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      // alçak dem (fon)
+      demGain = ctx.createGain(); demGain.gain.value = 0; demGain.connect(ana);
+      const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 300; f.connect(demGain);
+      [[73.42, 0.3], [73.9, 0.3], [110, 0.12]].forEach(([fr, a]) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = fr; g.gain.value = a; o.connect(g).connect(f); o.start(); });
+    }
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+  }
+  const calisiyor = () => !!ctx && ctx.state === "running";
+  const hazir = () => calisiyor() && acik;
+  const sinir = (ad, ms) => { const n = performance.now(); if (son[ad] && n - son[ad] < ms) return false; son[ad] = n; return true; };
+  function zarf(g, t, a, tepe, sure) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(tepe, t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + sure); }
+  function gurultuKaynak(t, sure, tur, frek, q, tepe, a) {
+    const n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    n.buffer = gurultu; n.loop = true; f.type = tur; f.frequency.value = frek; if (q) f.Q.value = q;
+    zarf(g, t, a || 0.002, tepe, sure); n.connect(f).connect(g).connect(ana); n.start(t); n.stop(t + sure + 0.1);
+  }
+  function davul(t, guc = 1) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(115, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.28);
+    zarf(g, t, 0.005, 0.9 * guc, 0.55); o.connect(g).connect(ana); o.start(t); o.stop(t + 0.7);
+    gurultuKaynak(t, 0.12, "lowpass", 900, 0, 0.3 * guc);
+  }
+  const tek = (t, guc = 1) => gurultuKaynak(t, 0.06, "bandpass", 2600, 1.5, 0.22 * guc, 0.001);
+  const zil = (t, guc = 1, sure = 1.2) => gurultuKaynak(t, sure, "highpass", 5500, 0, 0.28 * guc, 0.003);
+  function can(t, frek, guc = 1, sure = 1.5) {
+    [[1, 1], [2.76, 0.45], [5.4, 0.2]].forEach(([k, a]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = frek * k;
+      zarf(g, t, 0.004, 0.22 * a * guc, sure / Math.sqrt(k)); o.connect(g).connect(ana); o.start(t); o.stop(t + sure + 0.1);
+    });
+  }
+  function ney(t, frek, sure, guc = 1) {
+    const o = ctx.createOscillator(), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain(), f = ctx.createBiquadFilter();
+    o.type = "triangle"; o.frequency.value = frek; lfo.frequency.value = 5.2; lg.gain.value = frek * 0.012;
+    lfo.connect(lg).connect(o.frequency); f.type = "lowpass"; f.frequency.value = frek * 4;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.2 * guc, t + 0.09);
+    g.gain.setValueAtTime(0.2 * guc, t + sure * 0.75); g.gain.exponentialRampToValueAtTime(0.0001, t + sure + 0.15);
+    o.connect(f).connect(g).connect(ana); o.start(t); lfo.start(t); o.stop(t + sure + 0.2); lfo.stop(t + sure + 0.2);
+    gurultuKaynak(t, sure, "bandpass", frek * 2, 2, 0.04 * guc, 0.05);
+  }
+  function pop(t, frek, guc) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(frek, t); o.frequency.exponentialRampToValueAtTime(frek * 1.5, t + 0.06);
+    zarf(g, t, 0.003, 0.12 * guc, 0.08); o.connect(g).connect(ana); o.start(t); o.stop(t + 0.15);
+  }
+  function ezgi(t, notalar, guc = 1) { let z = t; for (const [n, d] of notalar) { ney(z, N[n], d, guc); z += d; } return z; }
+
+  // Fon: ağır yürüyüş davulu (DÜM . düm tek) ve alçak dem
+  let fonZaman = 0, fonSayac = 0;
+  function fonAdim() {
+    if (!calisiyor()) return;
+    demGain.gain.setTargetAtTime(acik && fonAcik ? 0.05 : 0, ctx.currentTime, 0.5);
+    if (!acik || !fonAcik) return;
+    if (fonZaman < ctx.currentTime) fonZaman = ctx.currentTime + 0.1;
+    while (fonZaman < ctx.currentTime + 0.3) {
+      const v = fonSayac % 4;
+      if (v === 0) davul(fonZaman, 0.5); else if (v === 2) davul(fonZaman, 0.28); else if (v === 3) tek(fonZaman, 0.5);
+      fonZaman += 0.75; fonSayac++;
+    }
+  }
+  const simdi = () => ctx.currentTime + 0.02;
+  return {
+    baslat, fonAdim, calisiyor,
+    acikMi: () => acik, fonMu: () => fonAcik, duzey: () => duzey,
+    acKapa() { acik = !acik; if (ana) ana.gain.setTargetAtTime(acik ? duzey : 0, ctx.currentTime, 0.05); kaydet(); },
+    fonAcKapa() { fonAcik = !fonAcik; kaydet(); },
+    duzeyAyarla(v) { duzey = v; if (ana && acik) ana.gain.setTargetAtTime(duzey, ctx.currentTime, 0.05); kaydet(); },
+    katil() { if (hazir() && sinir("katil", 140)) pop(simdi(), 520, 1); },
+    balon() { if (hazir() && sinir("balon", 220)) pop(simdi(), 900, 0.55); },
+    begeni() { if (hazir() && sinir("begeni", 350)) pop(simdi(), 1250, 0.3); },
+    gul() { if (hazir() && sinir("gul", 200)) { const t = simdi(); can(t, N.D5, 0.7, 1.2); can(t + 0.09, N.A5, 0.4, 1); } },
+    paylas() { if (hazir() && sinir("paylas", 400)) { const t = simdi(); can(t, N.G4 * 2, 0.5, 0.8); can(t + 0.12, N.C5 * 2, 0.5, 0.8); } },
+    omuz() { if (!hazir()) return; const t = simdi(); davul(t, 1); davul(t + 0.35, 0.8); zil(t + 0.35, 0.6, 0.8); },
+    sancak() { if (!hazir()) return; const t = simdi(); [0, 0.25, 0.5].forEach(d => davul(t + d, 0.9)); zil(t + 0.75, 1, 1.4); ezgi(t + 0.75, [["A4", 0.3], ["Bb4", 0.3], ["A4", 0.9]], 0.8); },
+    sokullu() {
+      if (!hazir()) return; const t = simdi();
+      for (let i = 0; i < 14; i++) davul(t + i * 0.07, 0.3 + i * 0.05);
+      davul(t + 1.05, 1.3); zil(t + 1.05, 1.2, 2); can(t + 1.05, N.D3, 1, 3);
+      ezgi(t + 1.3, [["D4", 0.3], ["Fs4", 0.3], ["A4", 0.3], ["D5", 1.1]], 0.9);
+    },
+    soru() { if (!hazir()) return; const t = simdi(); davul(t, 0.8); ezgi(t + 0.15, [["A4", 0.25], ["Bb4", 0.25], ["A4", 0.25], ["G4", 0.25], ["Fs4", 0.8]], 0.85); },
+    tik() { if (hazir()) pop(simdi(), 1500, 0.45); },
+    dogru() { if (!hazir()) return; const t = simdi(); ["D4", "Fs4", "A4", "D5"].forEach((n, i) => can(t + i * 0.11, N[n], 0.8, 1.4)); },
+    yanlis() { if (!hazir()) return; const t = simdi(); can(t, N.D3, 0.9, 1.6); ney(t + 0.1, N.Eb4, 0.9, 0.6); },
+    turSonu() {
+      if (!hazir()) return; const t = simdi();
+      [0, 0.4, 0.8].forEach(d => davul(t + d, 1)); zil(t + 1.2, 1, 1.8);
+      ezgi(t + 1.2, [["D4", 0.3], ["Eb4", 0.3], ["Fs4", 0.3], ["G4", 0.3], ["A4", 1.2]], 0.9);
+    },
+  };
+})();
+// Tarayıcılar sesi ancak ekrana dokunulunca başlatır
+["pointerdown", "keydown", "touchend"].forEach(e => addEventListener(e, () => Ses.baslat(), {passive: true}));
 
 /* ================= CANLI BAĞLANTI ================= */
 // Köprü (kopru/server.js) ve TikFinity aynı biçimi gönderir: {event, data}
@@ -761,7 +892,8 @@ const $ = id => document.getElementById(id);
 const form = $("ayar");
 function durumYaz() { $("durum").textContent = {bagli: "Bağlandı: canlı olaylar geliyor", hata: "Bağlanamadı, 3 sn sonra yeniden denenecek", yok: ayar.ws ? "Bağlanıyor…" : "Bağlantı yok"}[wsDurum]; }
 function demoYaz() { $("bDemo").textContent = "Demo: " + (demoAcik ? "açık" : "kapalı"); }
-function formDoldur() { $("aBaslik").value = ayar.baslik; $("aKelime").value = ayar.kelime; $("aWs").value = ayar.ws; demoYaz(); durumYaz(); }
+function sesYaz() { $("bSes").textContent = "Ses: " + (Ses.acikMi() ? "açık" : "kapalı"); $("bFon").textContent = "Fon davulu: " + (Ses.fonMu() ? "açık" : "kapalı"); $("aDuzey").value = Ses.duzey(); }
+function formDoldur() { sesYaz(); $("aBaslik").value = ayar.baslik; $("aKelime").value = ayar.kelime; $("aWs").value = ayar.ws; demoYaz(); durumYaz(); }
 $("ayarDug").onclick = () => { form.hidden = !form.hidden; if (!form.hidden) formDoldur(); };
 form.addEventListener("submit", e => {
   e.preventDefault();
@@ -773,6 +905,9 @@ form.addEventListener("submit", e => {
 });
 function demoDegis() { demoAcik = !demoAcik; demoYaz(); if (demoAcik && !oyuncular.size) demoTohumla(); }
 $("bDemo").onclick = demoDegis;
+$("bSes").onclick = () => { Ses.baslat(); Ses.acKapa(); sesYaz(); };
+$("bFon").onclick = () => { Ses.baslat(); Ses.fonAcKapa(); sesYaz(); };
+$("aDuzey").addEventListener("input", e => Ses.duzeyAyarla(Number(e.target.value)));
 $("bSoru").onclick = () => { if (!aktifSoru) soruBaslat(); };
 $("bSifirla").onclick = sifirla;
 addEventListener("keydown", e => {
@@ -783,6 +918,7 @@ addEventListener("keydown", e => {
   else if (k === "r") sifirla();
   else if (k === "s") $("ayarDug").click();
   else if (k === "f") tamEkranDegis();
+  else if (k === "m") { Ses.acKapa(); sesYaz(); }
 });
 
 /* ================= TAM EKRAN ================= */
