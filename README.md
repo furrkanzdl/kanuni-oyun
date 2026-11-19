@@ -16,7 +16,6 @@ TikTok canlı yayını için etkileşimli alay oyunu. İzleyiciler sohbete yazar
 | 100+ jetonluk hediye | 90 sn boyunca Sokullu Paşa olur, alayı yönetir |
 | Paylaşır | +10 puan, ekranda duyurulur |
 
-Her 70 saniyede bir **Kanuni dönemiyle ilgili tarih sorusu** çıkar. İzleyiciler A, B, C veya D yazar. Doğru bilen herkes 50 puan alır, ilk bilen 100 puan alır.
 5 dakikalık tur bitince en çok puanı olan "turun alay başı" ilan edilir, puanlar sıfırlanır.
 
 ## Yayında nasıl kullanılır
@@ -55,13 +54,13 @@ TikFinity kullanıyorsan köprüye gerek yok: `index.html`'i aç, ⚙ ayarların
 
 ## Ses
 
-Davul, zil, çan ve ney benzeri sesler tarayıcıda üretilir. Arkada ağır bir yürüyüş davulu çalar. Hediyelerin, soruların ve tur sonunun kendi sesleri vardır.
+Davul, zil, çan ve ney benzeri sesler tarayıcıda üretilir. Arkada ağır bir yürüyüş davulu çalar. Hediyelerin ve tur sonunun kendi sesleri vardır.
 Tarayıcı sesi ancak ekrana dokununca başlatır: oyunu açınca bir kez dokun. Ses açma/kapama, fon davulu ve ses düzeyi ⚙ ayarlarındadır.
 
 ## Kısayollar
 
-`D` demo aç/kapat · `Q` hemen soru sor · `R` turu sıfırla · `S` ayarlar · `F` tam ekran · `M` ses
+`D` demo aç/kapat · `R` turu sıfırla · `S` ayarlar · `F` tam ekran · `M` ses
 
-Ayarlar panelinden başlığı ve katılma kelimesini değiştirebilirsin. Soruları değiştirmek için `index.html` içindeki `SORULAR` listesini düzenle.
+Ayarlar panelinden başlığı ve katılma kelimesini değiştirebilirsin.
 
 Not: Köprü, TikTok'un resmî olmayan bir kütüphanesini (`tiktok-live-connector`) kullanır. TikTok bir şeyi değiştirirse geçici olarak çalışmayabilir. O durumda `npm install tiktok-live-connector@latest` dene.

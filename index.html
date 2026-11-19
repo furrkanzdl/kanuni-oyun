@@ -64,10 +64,9 @@ body.tam #tamEkran,body.tam #ayarDug,body.tam #ayar{display:none!important}
   </div>
   <label for="aDuzey">Ses düzeyi<input id="aDuzey" type="range" min="0" max="1" step="0.05"></label>
   <div class="sira">
-    <button type="button" id="bSoru">Soru sor (Q)</button>
     <button type="button" id="bSifirla">Turu sıfırla (R)</button>
   </div>
-  <small>Kısayollar: D demo · Q soru · R sıfırla · S bu panel · F tam ekran · M ses<br>Tam ekrandan çıkmak için telefonda geri hareketini yap. Oyuna iki kez dokunmak da tam ekranı açıp kapatır.</small>
+  <small>Kısayollar: D demo · R sıfırla · S bu panel · F tam ekran · M ses<br>Tam ekrandan çıkmak için telefonda geri hareketini yap. Oyuna iki kez dokunmak da tam ekranı açıp kapatır.</small>
 </form>
 
 <script>
@@ -81,9 +80,6 @@ const VARSAYILAN = {
 };
 const TUR_SURESI = 300;       // sn, beğeni turu
 const SAF_YENILEME = 20;      // sn, saflar bu aralıkla yeniden dizilir
-const SORU_ARALIGI = 70;      // sn, iki soru arası
-const SORU_SURESI = 20;       // sn
-const SORU_ODULU = 50;        // doğru cevap puanı
 const HEDIYE_CARPANI = 20;    // 1 jeton = 20 beğeni puanı
 
 let ayar = {...VARSAYILAN};
@@ -93,25 +89,6 @@ let demoAcik = true;
 // Köprüden açıldıysa doğrudan canlı yayına bağlan, demo kapalı başla
 if (window.KOPRU_WS) { if (!ayar.ws) ayar.ws = window.KOPRU_WS; demoAcik = false; }
 try { const q = new URLSearchParams(location.search); if (q.get("demo") === "0") demoAcik = false; } catch (e) {}
-
-/* Kanuni dönemi soruları (KPSS Osmanlı Yükselme Dönemi) */
-const SORULAR = [
-  {s:"Kanuni hangi kuşatma sırasında vefat etti?", c:["Mohaç","Zigetvar","Viyana","Rodos"], d:1},
-  {s:"Mohaç Meydan Muharebesi hangi yıl yapıldı?", c:["1514","1521","1526","1538"], d:2},
-  {s:"Preveze'de Osmanlı donanmasının komutanı kimdi?", c:["Turgut Reis","Piri Reis","Piyale Paşa","Barbaros Hayreddin"], d:3},
-  {s:"Kanuni'nin ölümünü ordudan gizleyen sadrazam kimdi?", c:["Sokullu Mehmed","Pargalı İbrahim","Rüstem Paşa","Kara Ahmed"], d:0},
-  {s:"Kanuni döneminde ilk kez kuşatılan Avrupa başkenti?", c:["Budin","Belgrad","Viyana","Prag"], d:2},
-  {s:"Mimar Sinan hangi eserini \"kalfalık eserim\" diye anar?", c:["Şehzade","Süleymaniye","Selimiye","Mihrimah"], d:1},
-  {s:"Safevilerle yapılan ilk resmî antlaşma hangisidir?", c:["Amasya","Kasr-ı Şirin","Ferhat Paşa","Nasuh Paşa"], d:0},
-  {s:"1551'de Turgut Reis'in de katıldığı seferle alınan yer?", c:["Cezayir","Tunus","Trablusgarp","Malta"], d:2},
-  {s:"1533 İstanbul Antlaşması'nda Avusturya arşidükü kime denk sayıldı?", c:["Padişaha","Sadrazama","Kaptan-ı Deryaya","Şeyhülislama"], d:1},
-  {s:"Kanuni Rodos'u hangi yıl fethetti?", c:["1516","1522","1529","1534"], d:1},
-  {s:"Irakeyn Seferi (1534) ile Osmanlı'ya katılan şehir?", c:["Tebriz","Bağdat","Basra","Musul"], d:1},
-  {s:"Kanuni'den sonra tahta çıkan padişah kimdir?", c:["II. Selim","III. Murad","Şehzade Mustafa","III. Mehmed"], d:0},
-  {s:"Cerbe Deniz Savaşı'nda (1560) Osmanlı komutanı kimdi?", c:["Piyale Paşa","Seydi Ali Reis","Kılıç Ali","Barbaros"], d:0},
-  {s:"Batılılar Kanuni'yi hangi lakapla anar?", c:["Yavuz","Muhteşem","Fatih","Yıldırım"], d:1},
-  {s:"Belgrad hangi padişah döneminde fethedildi?", c:["II. Murad","Fatih","Kanuni","Yavuz"], d:2},
-];
 
 /* ================= YARDIMCILAR ================= */
 const W = 1080, H = 1920;
@@ -135,8 +112,7 @@ addEventListener("resize", sigdir); sigdir();
 const oyuncular = new Map();   // id -> oyuncu
 let bekleyenBegeni = new Map(); // katılmamış kişilerin beğenileri
 let sira = [];                 // dizilmiş oyuncu listesi
-let turKalan = TUR_SURESI, safKalan = SAF_YENILEME, soruKalan = 25;
-let aktifSoru = null, sonSoru = -1, soruSonucu = null;
+let turKalan = TUR_SURESI, safKalan = SAF_YENILEME;
 let bildirimler = [], afis = null, parcaciklar = [], gulSayac = 0;
 let katilmaSayisi = 0, turBasi = null;
 
@@ -220,12 +196,6 @@ function olaySohbet(id, ad, mesaj) {
   const n = normal(mesaj), kelimeler = n.split(" ");
   let p = oyuncuAl(id, ad);
   if (!p && n.includes(normal(ayar.kelime))) p = katil(id, ad);
-  // soru cevabı
-  if (aktifSoru && /^[ABCD]$/.test(n)) {
-    if (!p) p = katil(id, ad);
-    if (!aktifSoru.cevaplar.has(id)) aktifSoru.cevaplar.set(id, {secim: "ABCD".indexOf(n), t: performance.now(), p});
-    return;
-  }
   if (!p) return;
   for (const k of kelimeler) if (ROLLER[k] && p.rol !== ROLLER[k]) { p.rol = ROLLER[k]; balon(p, ({yeniceri:"Yeniçeri oldum!",sipahi:"Sipahi oldum!",kadin:"Ferace giydim",erkek:"Kavuğumu taktım"})[p.rol]); return; }
   if (n === normal(ayar.kelime)) { balon(p, mesaj); return; }
@@ -276,23 +246,6 @@ function olayPaylas(id, ad) {
   if (p) puanEkle(p, 10);
 }
 function olayTakip(id, ad) { bildir(`${kis(ad || id, 18)} yayını takip etti`, "takip"); }
-
-/* ================= SORU ================= */
-function soruBaslat() {
-  let i; do { i = Math.floor(Math.random() * SORULAR.length); } while (i === sonSoru && SORULAR.length > 1);
-  sonSoru = i;
-  aktifSoru = {...SORULAR[i], kalan: SORU_SURESI, cevaplar: new Map(), t: performance.now()};
-  soruSonucu = null;
-  Ses.soru();
-}
-function soruBitir() {
-  const q = aktifSoru; aktifSoru = null;
-  const dogrular = [...q.cevaplar.values()].filter(c => c.secim === q.d).sort((a, b) => a.t - b.t);
-  dogrular.forEach((c, i) => puanEkle(c.p, SORU_ODULU + (i === 0 ? SORU_ODULU : 0)));
-  soruSonucu = {q, dogrular, toplam: q.cevaplar.size, t: performance.now()};
-  soruKalan = SORU_ARALIGI;
-  if (dogrular.length) Ses.dogru(); else Ses.yanlis();
-}
 
 /* ================= PARÇACIK ================= */
 function parcacikEkle(tur) {
@@ -612,10 +565,6 @@ function arayuzCiz(t, now) {
     g.globalAlpha = 1;
   });
 
-  // Soru kartı
-  if (aktifSoru) soruCiz(aktifSoru, now);
-  else if (soruSonucu && now - soruSonucu.t < 7000) sonucCiz(soruSonucu, now);
-  else if (soruKalan < 10) yazi(`Tarih sorusu ${Math.ceil(soruKalan)} sn sonra`, W / 2, 712, `800 30px ${FM}`, "#f4ead2", "center");
 
   // Afiş
   if (afis) {
@@ -638,37 +587,6 @@ function arayuzCiz(t, now) {
   if (Ses.acikMi() && !Ses.calisiyor()) yazi("🔇 Ses için ekrana dokun", W / 2, 48, `800 24px ${FM}`, "#ffd166", "center");
 }
 
-function soruCiz(q, now) {
-  const x = 120, y = 810, w = W - 240, font = `800 34px ${FM}`;
-  const sat = sar(q.s, w - 70, font);
-  const h = 128 + sat.length * 40 + 2 * 62;
-  panel(x, y, w, h, "rgba(244,234,210,.96)", "#7a4b1c");
-  yazi(`Tarih sorusu · ${Math.ceil(q.kalan)} sn`, x + 34, y + 46, `700 26px ${FB}`, "#7a1f1f");
-  yazi(`Cevabı sohbete yaz · doğru bilen ${SORU_ODULU} puan`, x + w - 34, y + 46, `600 21px ${FM}`, "#5a3d22", "right");
-  sat.forEach((s, i) => yazi(s, x + 34, y + 96 + i * 40, font, "#1f140c"));
-  const oy = y + 110 + sat.length * 40;
-  const say = [0, 0, 0, 0]; for (const c of q.cevaplar.values()) say[c.secim]++;
-  q.c.forEach((c, i) => {
-    const cx = x + 34 + (i % 2) * ((w - 68) / 2 + 6), cy = oy + Math.floor(i / 2) * 62, cw = (w - 68) / 2 - 6;
-    g.fillStyle = "#3a0f14"; g.beginPath(); g.roundRect(cx, cy, cw, 52, 10); g.fill();
-    yazi("ABCD"[i], cx + 18, cy + 37, `800 30px ${FB}`, "#e9c46a");
-    yazi(c, cx + 54, cy + 36, `700 27px ${FM}`, "#f4ead2", "left", cw - 110);
-    yazi(String(say[i]), cx + cw - 16, cy + 36, `700 22px ${FM}`, "#d6c4a0", "right");
-  });
-  // süre çubuğu
-  g.fillStyle = "#7a1f1f"; g.fillRect(x + 12, y + h - 14, (w - 24) * (q.kalan / SORU_SURESI), 6);
-}
-function sonucCiz(r, now) {
-  const x = 120, y = 810, w = W - 240, h = 210;
-  panel(x, y, w, h, "rgba(244,234,210,.96)", "#7a4b1c");
-  yazi("Doğru cevap", x + 34, y + 48, `700 26px ${FB}`, "#7a1f1f");
-  yazi(`${"ABCD"[r.q.d]}) ${r.q.c[r.q.d]}`, x + 34, y + 98, `800 40px ${FM}`, "#1f140c", "left", w - 68);
-  const ilk = r.dogrular.slice(0, 3).map(c => kis(c.p.ad, 12)).join(", ");
-  const m = r.dogrular.length ? `${r.dogrular.length}/${r.toplam} kişi bildi · en hızlı: ${ilk}` : (r.toplam ? `${r.toplam} cevap geldi, bilen olmadı` : "Cevap gelmedi");
-  yazi(m, x + 34, y + 150, `600 25px ${FM}`, "#3a2412", "left", w - 68);
-  if (r.dogrular[0]) yazi(`${kis(r.dogrular[0].p.ad, 16)} çift puan aldı`, x + 34, y + 184, `700 23px ${FM}`, "#1f5a3d");
-}
-
 function balonCiz(x, y, metin, alfa) {
   g.globalAlpha = alfa;
   g.font = `700 22px ${FM}`;
@@ -689,12 +607,6 @@ function kare(now) {
   turKalan -= dt; safKalan -= dt;
   if (safKalan <= 0) { safKalan = SAF_YENILEME; diz(true); }
   if (turKalan <= 0) turBitti();
-  if (aktifSoru) {
-    const once = Math.ceil(aktifSoru.kalan); aktifSoru.kalan -= dt;
-    if (Math.ceil(aktifSoru.kalan) < once && once <= 5 && aktifSoru.kalan > 0) Ses.tik();
-    if (aktifSoru.kalan <= 0) soruBitir();
-  }
-  else { soruKalan -= dt; if (soruKalan <= 0 && oyuncular.size) soruBaslat(); }
   // süresi biten görevler
   for (const p of oyuncular.values()) if (p.gorev && ((p.gorev === "omuz" && p.omuzBitis < now) || (p.gorev === "sancak" && p.sancakBitis < now) || (p.gorev === "sokullu" && p.sokulluBitis < now))) { diz(false); break; }
   if (demoAcik) demoAdim(dt);
@@ -761,14 +673,14 @@ function turBitti() {
 }
 function sifirla() {
   oyuncular.clear(); sira = []; bekleyenBegeni.clear(); parcaciklar = []; bildirimler = [];
-  aktifSoru = null; soruSonucu = null; soruKalan = 25; turKalan = TUR_SURESI; safKalan = SAF_YENILEME; gulSayac = 0;
+  turKalan = TUR_SURESI; safKalan = SAF_YENILEME; gulSayac = 0;
   if (demoAcik) demoTohumla();
 }
 
 /* ================= DEMO ================= */
 const AD1 = ["zeynep","emre","elif","mert","ayse","burak","selin","can","melike","yusuf","esra","omer","busra","kaan","deniz","hilal","furkan","irem","ahmet","nur","baris","sude","eymen","ecrin","tuana","berat","ece","umut","asya","efe","sila","kerem","beyza","alp","yagmur","emir","defne","hasan","gul","serkan"];
-const AD2 = ["_tarih",".kpss","1453","_osm","34","06","_tr",".edits","_","x","2026","fan","61","35","_official",""];
-const SOZ = ["Allah rahmet eylesin","Ruhu şad olsun","Mekânı cennet olsun","Zigetvar alındı mı?","Sokullu nerede?","Ben de geldim","öne geçmek istiyorum","Mohaç 1526!","Selamlar","Kanuni çok büyük padişah","KPSS'ye çalışıyorum","beğeni atın","Süleymaniye'yi gördünüz mü","alay çok uzun","hehe","merhaba sultanım","1566 Zigetvar"];
+const AD2 = ["_tarih","1453","_osm","34","06","_tr",".edits","_","x","2026","fan","61","35","_official",""];
+const SOZ = ["Allah rahmet eylesin","Ruhu şad olsun","Mekânı cennet olsun","Zigetvar alındı mı?","Sokullu nerede?","Ben de geldim","öne geçmek istiyorum","Mohaç 1526!","Selamlar","Kanuni çok büyük padişah","beğeni atın","Süleymaniye'yi gördünüz mü","alay çok uzun","hehe","merhaba sultanım","1566 Zigetvar"];
 let demoKisiler = [], demoSaat = 0;
 function demoAd() { return sec(AD1) + sec(AD2) + (Math.random() < 0.4 ? Math.floor(rnd(1, 99)) : ""); }
 function demoTohumla() {
@@ -789,7 +701,6 @@ function demoAdim(dt) {
   if (olasi(0.022)) olayHediye(sec(uyeler), null, "Taç", 99, 1);
   if (olasi(0.008)) olayHediye(sec(uyeler), null, "Aslan", 299, 1);
   if (olasi(0.15)) { const id = sec(uyeler); olayPaylas(id, oyuncular.get(id).ad); }
-  if (aktifSoru && olasi(5)) { const dogru = Math.random() < 0.6; olaySohbet(sec(uyeler), null, "ABCD"[dogru ? aktifSoru.d : Math.floor(rnd(0, 4))]); }
 }
 
 /* ================= SES ================= */
@@ -889,10 +800,6 @@ const Ses = (() => {
       davul(t + 1.05, 1.3); zil(t + 1.05, 1.2, 2); can(t + 1.05, N.D3, 1, 3);
       ezgi(t + 1.3, [["D4", 0.3], ["Fs4", 0.3], ["A4", 0.3], ["D5", 1.1]], 0.9);
     },
-    soru() { if (!hazir()) return; const t = simdi(); davul(t, 0.8); ezgi(t + 0.15, [["A4", 0.25], ["Bb4", 0.25], ["A4", 0.25], ["G4", 0.25], ["Fs4", 0.8]], 0.85); },
-    tik() { if (hazir()) pop(simdi(), 1500, 0.45); },
-    dogru() { if (!hazir()) return; const t = simdi(); ["D4", "Fs4", "A4", "D5"].forEach((n, i) => can(t + i * 0.11, N[n], 0.8, 1.4)); },
-    yanlis() { if (!hazir()) return; const t = simdi(); can(t, N.D3, 0.9, 1.6); ney(t + 0.1, N.Eb4, 0.9, 0.6); },
     turSonu() {
       if (!hazir()) return; const t = simdi();
       [0, 0.4, 0.8].forEach(d => davul(t + d, 1)); zil(t + 1.2, 1, 1.8);
@@ -956,13 +863,11 @@ $("bDemo").onclick = demoDegis;
 $("bSes").onclick = () => { Ses.baslat(); Ses.acKapa(); sesYaz(); };
 $("bFon").onclick = () => { Ses.baslat(); Ses.fonAcKapa(); sesYaz(); };
 $("aDuzey").addEventListener("input", e => Ses.duzeyAyarla(Number(e.target.value)));
-$("bSoru").onclick = () => { if (!aktifSoru) soruBaslat(); };
 $("bSifirla").onclick = sifirla;
 addEventListener("keydown", e => {
   if (e.target.tagName === "INPUT") return;
   const k = e.key.toLowerCase();
   if (k === "d") demoDegis();
-  else if (k === "q" && !aktifSoru) soruBaslat();
   else if (k === "r") sifirla();
   else if (k === "s") $("ayarDug").click();
   else if (k === "f") tamEkranDegis();
